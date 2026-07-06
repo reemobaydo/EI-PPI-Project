@@ -19,11 +19,6 @@ export function calculateTotalEIScore(samplePrep, instrumentation, reagents, was
   // Calculate base EPPI Score: 50% Environmental Index (EI) + 50% Performance Practicality Index (PPI) (new formula)
   let totalScore = (eiIndexScore * 0.5) + (practicalityScore * 0.5);
   
-  // Add bonuses for multianalyte method and miniaturized instrument
-  const multianalyteBonus = instrumentation.multianalyteBonus || 0;
-  const miniaturizedBonus = instrumentation.miniaturizedBonus || 0;
-  totalScore += multianalyteBonus + miniaturizedBonus;
-  
   // Ensure total score is between 0 and 100
   totalScore = Math.min(100, Math.max(0, totalScore));
   
@@ -222,22 +217,16 @@ if (automation === 'non') {
   score += 2;
 }
  
-  // Multianalyte/multiparameter method adds 5 to total score, not to instrumentation score
-  let multianalyteBonus = 0;
+  // Multianalyte/multiparameter method adds 5 to the instrumentation score
   if (instrumentation.multianalyte) {
-    multianalyteBonus = 5;
+    score += 5;
   }
-  
-  // Miniaturized/portable instrument adds 10 to total score, not to instrumentation score
-  let miniaturizedBonus = 0;
+
+  // Miniaturized/portable instrument adds 10 to the instrumentation score
   if (instrumentation.miniaturized) {
-    miniaturizedBonus = 10;
+    score += 10;
   }
-  
-  // Store these bonuses as properties that will be applied to total score later
-  instrumentation.multianalyteBonus = multianalyteBonus;
-  instrumentation.miniaturizedBonus = miniaturizedBonus;
-  
+
   // Ensure score is not negative and not greater than 100
   score = Math.min(100, Math.max(0, score));
 return score;
