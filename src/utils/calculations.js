@@ -151,12 +151,12 @@ else if (samplePrep.solventType === 'nongreen')  extractionProcedureScore -= 10;
   }
 
   //    (c) In situ vs offline
-  // if (samplePrep.inSituPreparation === true) {
-  //   otherConditionsScore += 10;
-  // }
-  // if (samplePrep.offline === true) {
-  //   otherConditionsScore -= 10;
-  // }
+  if (samplePrep.inSituPreparation === true) {
+    otherConditionsScore += 10;
+  }
+  if (samplePrep.offline === true) {
+    otherConditionsScore -= 10;
+  }
 
   //    (d) **Sample throughput** (this is where the fix goes)
   if (samplePrep.sampleThroughput === 'high') {
@@ -234,14 +234,18 @@ return score;
 
 // Function to calculate Reagent Score
 export function calculateReagentScore(reagents) {
-  if (reagents.length === 0) {
-    return 100; // If no reagents, assume perfect score (water only)
+  // Skip reagents that were just added and haven't been configured yet,
+  // so the average doesn't shift until the user actually sets real values.
+  const configuredReagents = reagents.filter(reagent => reagent.configured !== false);
+
+  if (configuredReagents.length === 0) {
+    return 100; // If no configured reagents, assume perfect score (water only)
   }
-  
+
   let totalScore = 0;
-  
+
   // Calculate score for each reagent
-  reagents.forEach(reagent => {
+  configuredReagents.forEach(reagent => {
     let reagentScore = 0;
     
     // If it's water with zero pictograms
@@ -294,7 +298,7 @@ export function calculateReagentScore(reagents) {
   });
   
   // Average the scores
-  return totalScore / reagents.length;
+  return totalScore / configuredReagents.length;
 }
 
 // Function to calculate Waste Score

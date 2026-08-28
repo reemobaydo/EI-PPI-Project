@@ -98,7 +98,8 @@ export function ReagentForm(reagents, onChange, scores) {
       solventType: 'water',
       signalWord: 'notAvailable',
       ghsClass: 'zero',
-      volume: 'less1'
+      volume: 'less1',
+      configured: false // excluded from the Reagent Score average until the user sets real values
     };
     
     onChange([...reagents, newReagent]);
@@ -124,11 +125,14 @@ export function ReagentForm(reagents, onChange, scores) {
   form.appendChild(helpText);
 
   // ─── Compute Average Reagent Score ───
-  const individualScores = reagents.map((r) => calculateReagentScore(r));
+  // Newly added solvents (configured === false) are excluded until the user
+  // sets real values, so the score doesn't jump the moment "Add Another Solvent" is clicked.
+  const configuredReagents = reagents.filter((r) => r.configured !== false);
+  const individualScores = configuredReagents.map((r) => calculateReagentScore(r));
   const averageReagentScore =
     individualScores.length > 0
       ? individualScores.reduce((sum, x) => sum + x, 0) / individualScores.length
-      : 100; // If no reagents, default to 100
+      : 100; // If no configured reagents, default to 100
 
   // ─── Pinned Horizontal Progress Bar ───
   const progressBarElement = createHorizontalProgressBar(
@@ -404,7 +408,7 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   
   // Add the header to the reagent item
   reagentItem.appendChild(reagentHeader);
-  
+
   // Create a form layout with 3 sections, each with 2 fields
   const formLayout = document.createElement('div');
   formLayout.style.display = 'grid';
@@ -447,7 +451,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     const newSolventType = e.target.value;
     let updatedReagent = {
       ...reagent,
-      solventType: newSolventType
+      solventType: newSolventType,
+      configured: true
     };
     
     if (newSolventType === 'water') {
@@ -494,7 +499,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   solventNameInput.addEventListener('change', (e) => {
     onUpdate({
       ...reagent,
-      solventName: e.target.value
+      solventName: e.target.value,
+      configured: true
     });
   });
   
@@ -545,7 +551,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     const newSignalWord = e.target.value;
     let updatedReagent = {
       ...reagent,
-      signalWord: newSignalWord
+      signalWord: newSignalWord,
+      configured: true
     };
     
     // If signal word is set to "Not available", suggest setting GHS to "Zero pictograms"
@@ -605,7 +612,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     const newGhsClass = e.target.value;
     let updatedReagent = {
       ...reagent,
-      ghsClass: newGhsClass
+      ghsClass: newGhsClass,
+      configured: true
     };
     
     // If GHS is set to "Zero pictograms", suggest setting Signal Word to "Not available"
@@ -655,7 +663,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   volumeSelect.addEventListener('change', (e) => {
     onUpdate({
       ...reagent,
-      volume: e.target.value
+      volume: e.target.value,
+      configured: true
     });
   });
   

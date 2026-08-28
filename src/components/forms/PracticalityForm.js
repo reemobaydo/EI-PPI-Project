@@ -174,7 +174,26 @@ export function PracticalityForm(state, onChange, scores) {
   instrCostSection.appendChild(instrCostGroup);
   form.appendChild(instrCostSection);
 
-  
+  // ─── 8. Maintenance frequency and instrument lifetime ───
+  const maintenanceSection = document.createElement('div');
+  maintenanceSection.className = 'form-section maintenance-section';
+
+  const maintenanceGroup = createFormGroup(
+    translate('Maintenance frequency and instrument lifetime'),
+    'maintenance',
+    [
+      { value: 'long',     label: translate('Long lifespans and minimal maintenance'), score: '10' },
+      { value: 'moderate', label: translate('Moderate maintenance'), score: '5' },
+      { value: 'frequent', label: translate('Frequent repairs or replacement'), score: '0' }
+    ],
+    state.maintenance || 'long',
+    (value) => onChange('maintenance', value)
+  );
+  maintenanceGroup.classList.add('practicality-option');
+  maintenanceSection.appendChild(maintenanceGroup);
+  form.appendChild(maintenanceSection);
+
+
   // Efficiency Section
   const efficiencySection = document.createElement('div');
   efficiencySection.className = 'form-section efficiency-section';
