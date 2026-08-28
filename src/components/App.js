@@ -230,7 +230,16 @@ export function renderApp(container) {
       notMultianalyte: false,
       miniaturized: false
     },
-    reagents: [], // Initial empty reagents array - will be filled with {solventType, signalWord, ghsClass, volume} objects
+    reagents: [
+      {
+        id: 'reagent_' + Date.now(),
+        solventType: 'water',
+        signalWord: 'notAvailable',
+        ghsClass: 'zero',
+        volume: 'less1',
+        configured: false // excluded from the Reagent Score average until the user sets real values
+      }
+    ], // Starts with one reagent card ready to fill in; "Add Another Solvent" appends more of {solventType, signalWord, ghsClass, volume}
     waste: {
       volume: 'less1',
       biodegradable: true,

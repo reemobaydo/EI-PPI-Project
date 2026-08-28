@@ -14,6 +14,18 @@ function makeCollapsible(headerEl, contentEl) {
     contentEl.style.display = contentEl.style.display === 'none' ? '' : 'none';
   });
 }
+
+// Fields that actually feed into the reagent's score. A reagent only counts
+// toward the Reagent Score average once every one of these has been set by the user.
+const REAGENT_REQUIRED_FIELDS = ['solventType', 'signalWord', 'ghsClass', 'volume'];
+
+function withTouchedStatus(reagent, updatedReagent, touchedFieldNames) {
+  const touched = { ...(reagent._touched || {}) };
+  touchedFieldNames.forEach((field) => { touched[field] = true; });
+  updatedReagent._touched = touched;
+  updatedReagent.configured = REAGENT_REQUIRED_FIELDS.every((field) => touched[field]);
+  return updatedReagent;
+}
 export function ReagentForm(reagents, onChange, scores) {
   const form = document.createElement('div');
   form.className = 'form-section card reagent-card';
@@ -451,15 +463,16 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     const newSolventType = e.target.value;
     let updatedReagent = {
       ...reagent,
-      solventType: newSolventType,
-      configured: true
+      solventType: newSolventType
     };
-    
+    const touchedFields = ['solventType'];
+
     if (newSolventType === 'water') {
       updatedReagent.signalWord = 'notAvailable';
       updatedReagent.ghsClass = 'zero';
+      touchedFields.push('signalWord', 'ghsClass');
       delete updatedReagent.solventName;
-      
+
       // When water is selected, hide the solvent name field
       const solventNameField = reagentItem.querySelector('.solvent-name-field');
       if (solventNameField) {
@@ -472,8 +485,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
         solventNameField.style.display = 'block';
       }
     }
-    
-    onUpdate(updatedReagent);
+
+    onUpdate(withTouchedStatus(reagent, updatedReagent, touchedFields));
   });
   
   solventTypeGroup.appendChild(solventTypeSelect);
@@ -497,10 +510,11 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   solventNameInput.value = reagent.solventName || '';
   
   solventNameInput.addEventListener('change', (e) => {
+    // Solvent name is descriptive only and doesn't affect scoring,
+    // so it doesn't count toward "all fields set".
     onUpdate({
       ...reagent,
-      solventName: e.target.value,
-      configured: true
+      solventName: e.target.value
     });
   });
   
@@ -551,18 +565,19 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     const newSignalWord = e.target.value;
     let updatedReagent = {
       ...reagent,
-      signalWord: newSignalWord,
-      configured: true
+      signalWord: newSignalWord
     };
-    
+    const touchedFields = ['signalWord'];
+
     // If signal word is set to "Not available", suggest setting GHS to "Zero pictograms"
     if (newSignalWord === 'notAvailable' && reagent.ghsClass !== 'zero') {
       if (confirm(translate('Signal Word is set to "Not available". Would you like to set GHS Classification to "Zero pictograms"?'))) {
         updatedReagent.ghsClass = 'zero';
+        touchedFields.push('ghsClass');
       }
     }
-    
-    onUpdate(updatedReagent);
+
+    onUpdate(withTouchedStatus(reagent, updatedReagent, touchedFields));
   });
   
   signalWordGroup.appendChild(signalWordSelect);
@@ -612,18 +627,19 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     const newGhsClass = e.target.value;
     let updatedReagent = {
       ...reagent,
-      ghsClass: newGhsClass,
-      configured: true
+      ghsClass: newGhsClass
     };
-    
+    const touchedFields = ['ghsClass'];
+
     // If GHS is set to "Zero pictograms", suggest setting Signal Word to "Not available"
     if (newGhsClass === 'zero' && reagent.signalWord !== 'notAvailable') {
       if (confirm(translate('GHS Classification is set to "Zero pictograms". Would you like to set Signal Word to "Not available"?'))) {
         updatedReagent.signalWord = 'notAvailable';
+        touchedFields.push('signalWord');
       }
     }
-    
-    onUpdate(updatedReagent);
+
+    onUpdate(withTouchedStatus(reagent, updatedReagent, touchedFields));
   });
   
   ghsClassGroup.appendChild(ghsClassSelect);
@@ -661,11 +677,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   });
   
   volumeSelect.addEventListener('change', (e) => {
-    onUpdate({
-      ...reagent,
-      volume: e.target.value,
-      configured: true
-    });
+    const updatedReagent = { ...reagent, volume: e.target.value };
+    onUpdate(withTouchedStatus(reagent, updatedReagent, ['volume']));
   });
   
   volumeGroup.appendChild(volumeSelect);
