@@ -265,7 +265,10 @@ const samplingComplexityGroup = createFormGroup(
       : 'minimal',
   (value) => {
     onChange('instrumentRequirements', value);
-    onChange('inSituPreparation', false);
+    // Keep this in sync with the "Sample Processing Method" radio below, which
+    // visually defaults to "In situ" — resetting both flags to false left the
+    // UI showing "In situ" checked while neither +10 nor -10 was actually applied.
+    onChange('inSituPreparation', true);
     onChange('offline', false);
   }
 );
@@ -284,7 +287,7 @@ const samplingMethodGroup = createFormGroup(
     { value: 'insitu',  label: translate('In situ sample preparation'), score: '10' },
     { value: 'offline', label: translate('Offline'), score: '-10' }
   ],
-  state.inSituPreparation ? 'insitu' : state.offline ? 'offline' : 'insitu',
+  state.offline ? 'offline' : 'insitu', // "insitu" is the only other real state, so this can never drift from the actual flags
   (value) => {
     onChange('inSituPreparation', value === 'insitu');
     onChange('offline', value === 'offline');

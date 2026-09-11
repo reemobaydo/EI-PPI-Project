@@ -708,17 +708,17 @@ function calculateReagentScore(reagent) {
       case 'between10And100': return 94;
       case 'more100': return 92;
     }
-  } else if ((reagent.ghsClass === 'one' && reagent.signalWord === 'danger') || 
+  } else if ((reagent.ghsClass === 'one' && reagent.signalWord !== 'warning') ||
             (reagent.ghsClass === 'two' && reagent.signalWord === 'warning')) {
-    // One pictogram + Danger OR Two pictograms + Warning
+    // One pictogram + Danger (or unset Signal Word, treated conservatively) OR Two pictograms + Warning
     switch (reagent.volume) {
       case 'less1': return 90;
       case 'less10': return 85;
       case 'between10And100': return 80;
       case 'more100': return 75;
     }
-  } else if (reagent.ghsClass === 'two' && reagent.signalWord === 'danger') {
-    // Two pictograms + Danger
+  } else if (reagent.ghsClass === 'two') {
+    // Two pictograms + Danger (or unset Signal Word, treated conservatively)
     switch (reagent.volume) {
       case 'less1': return 70;
       case 'less10': return 65;

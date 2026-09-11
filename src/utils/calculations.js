@@ -127,15 +127,15 @@ else if (samplePrep.solventType === 'nongreen')  extractionProcedureScore -= 10;
     // Adsorbent nature
     if (samplePrep.adsorbentNature === 'renewable') {
       extractionProcedureScore += 5;
-    }
 
-    // Adsorbent amount
-    if (samplePrep.adsorbentAmount === 'less0.5') {
-      extractionProcedureScore += 10;
-    } else if (samplePrep.adsorbentAmount === '0.5to1') {
-      extractionProcedureScore += 5;
-    } else if (samplePrep.adsorbentAmount === 'more1') {
-      extractionProcedureScore -= 10;
+      // Amount of adsorbent only matters when an adsorbent is actually used
+      if (samplePrep.adsorbentAmount === 'less0.5') {
+        extractionProcedureScore += 10;
+      } else if (samplePrep.adsorbentAmount === '0.5to1') {
+        extractionProcedureScore += 5;
+      } else if (samplePrep.adsorbentAmount === 'more1') {
+        extractionProcedureScore -= 10;
+      }
     }
   }
 
@@ -264,26 +264,26 @@ export function calculateReagentScore(reagents) {
         case 'between10And100': reagentScore = 94; break;
         case 'more100': reagentScore = 92; break;
       }
-    } 
-    else if ((reagent.ghsClass === 'one' && reagent.signalWord === 'danger') || 
+    }
+    else if ((reagent.ghsClass === 'one' && reagent.signalWord !== 'warning') ||
             (reagent.ghsClass === 'two' && reagent.signalWord === 'warning')) {
-      // One pictogram + Danger OR Two pictograms + Warning
+      // One pictogram + Danger (or unset Signal Word, treated conservatively) OR Two pictograms + Warning
       switch (reagent.volume) {
         case 'less1': reagentScore = 90; break;
         case 'less10': reagentScore = 85; break;
         case 'between10And100': reagentScore = 80; break;
         case 'more100': reagentScore = 75; break;
       }
-    } 
-    else if (reagent.ghsClass === 'two' && reagent.signalWord === 'danger') {
-      // Two pictograms + Danger
+    }
+    else if (reagent.ghsClass === 'two') {
+      // Two pictograms + Danger (or unset Signal Word, treated conservatively)
       switch (reagent.volume) {
         case 'less1': reagentScore = 70; break;
         case 'less10': reagentScore = 65; break;
         case 'between10And100': reagentScore = 60; break;
         case 'more100': reagentScore = 55; break;
       }
-    } 
+    }
     else if (reagent.ghsClass === 'three') {
       // Three or more pictograms + Danger
       switch (reagent.volume) {
