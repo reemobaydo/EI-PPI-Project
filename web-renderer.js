@@ -39,12 +39,6 @@ if (typeof window.api === 'undefined') {
   };
 }
 
-// …then below, your DOMContentLoaded + renderApp() as before
-document.addEventListener('DOMContentLoaded', () => {
-  renderApp(document.getElementById('app'));
-  if (window.feather) window.feather.replace();
-});
-
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
   try {

@@ -107,7 +107,7 @@ export function ReagentForm(reagents, onChange, scores) {
   addSolventContainer.addEventListener('click', () => {
     const newReagent = {
       id: 'reagent_' + Date.now(), // Ensure unique ID
-      solventType: 'water',
+      solventType: 'organic',
       signalWord: 'notAvailable',
       ghsClass: 'zero',
       volume: 'less1',

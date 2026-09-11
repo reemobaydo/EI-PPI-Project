@@ -210,7 +210,7 @@ export function renderApp(container) {
       // 1.3 Type of sample and sample efficiency
       sampleType: 'simple',
       // 1.4 Sample throughput
-      sampleThroughput: 'high',
+      sampleThroughput: 'moderate', // neutral (0) by default, so the score never starts with a hidden +5 the user never chose
       // 1.5 Extraction procedure
       extractionNeeded: 'no',
       solventType: 'complete',
@@ -233,7 +233,7 @@ export function renderApp(container) {
     reagents: [
       {
         id: 'reagent_' + Date.now(),
-        solventType: 'water',
+        solventType: 'organic',
         signalWord: 'notAvailable',
         ghsClass: 'zero',
         volume: 'less1',

@@ -2,6 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
+  <!-- ------------- cache-bust helper (must run before anything renders) ------------- -->
+  <script>
+    const CURRENT_VERSION = '20250427_9';                // bump when /assets change
+
+    function clearBrowserCache() {
+      console.log('Clearing browser cache and reloading…');
+
+      // legacy AppCache
+      if (window.applicationCache && window.applicationCache.swapCache) {
+        try { window.applicationCache.swapCache(); } catch (e) {}
+      }
+
+      // clear SW caches
+      if (window.caches) {
+        caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+      }
+
+      // wipe localStorage “cache_*”
+      Object.keys(localStorage).filter(k=>k.startsWith('cache_')).forEach(k=>localStorage.removeItem(k));
+
+      localStorage.setItem('last_update', CURRENT_VERSION);
+
+      // hard-reload with timestamp immediately, so the page never renders as
+      // interactive before being replaced — no delay, no window for a click
+      // to land and then get silently wiped out by this reload.
+      const ts = Date.now();
+      if (location.search.includes('cache_bust=')) {
+        location.replace(location.href.replace(/cache_bust=\d+/, 'cache_bust='+ts));
+      } else {
+        location.replace(location.href + (location.search ? '&' : '?') + 'cache_bust=' + ts);
+      }
+    }
+
+    if (localStorage.getItem('last_update') !== CURRENT_VERSION) clearBrowserCache();
+  </script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
@@ -55,49 +92,5 @@
 
   <!-- Coxcomb-chart module (prevents 404) -->
   <!-- <script type="module" src="src/utils/CoxcombChart.js"></script> -->
-
-  <!-- ------------- cache-bust helper ------------- -->
-  <script>
-    const CURRENT_VERSION = '20250427_9';                // bump when /assets change
-
-    function clearBrowserCache() {
-      console.log('Clearing browser cache and reloading…');
-
-      // legacy AppCache
-      if (window.applicationCache && window.applicationCache.swapCache) {
-        try { window.applicationCache.swapCache(); } catch (e) {}
-      }
-
-      // clear SW caches
-      if (window.caches) {
-        caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-      }
-
-      // meta tags for extra paranoia
-      [['Cache-Control','no-cache, no-store, must-revalidate'],
-       ['Pragma','no-cache'],
-       ['Expires','0']].forEach(([h,v])=>{
-         const m=document.createElement('meta');
-         m.httpEquiv=h; m.content=v; document.head.appendChild(m);
-       });
-
-      // wipe localStorage “cache_*”
-      Object.keys(localStorage).filter(k=>k.startsWith('cache_')).forEach(k=>localStorage.removeItem(k));
-
-      localStorage.setItem('last_update', CURRENT_VERSION);
-
-      // hard-reload with timestamp
-      setTimeout(()=>{
-        const ts = Date.now();
-        if (location.search.includes('cache_bust=')) {
-          location.href = location.href.replace(/cache_bust=\d+/, 'cache_bust='+ts);
-        } else {
-          location.href += (location.search ? '&' : '?') + 'cache_bust=' + ts;
-        }
-      }, 500);
-    }
-
-    if (localStorage.getItem('last_update') !== CURRENT_VERSION) clearBrowserCache();
-  </script>
 </body>
 </html>

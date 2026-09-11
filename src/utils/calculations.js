@@ -96,6 +96,16 @@ samplePrep.solventType = norm(samplePrep.solventType);
     samplingRequiredScore = 70;
   }
 
+  // In situ vs offline (Table 1, items 2.5/2.6) are sub-items of "Sampling
+  // procedure", so they modify this component before it gets divided by 3 —
+  // not "Other conditions", which is added on afterward at full strength.
+  if (samplePrep.inSituPreparation === true) {
+    samplingRequiredScore += 10;
+  }
+  if (samplePrep.offline === true) {
+    samplingRequiredScore -= 10;
+  }
+
   // (3) Extraction procedure
   if (samplePrep.extractionNeeded === 'no') {
     extractionProcedureScore = 100;
@@ -150,15 +160,7 @@ else if (samplePrep.solventType === 'nongreen')  extractionProcedureScore -= 10;
     otherConditionsScore += 10;
   }
 
-  //    (c) In situ vs offline
-  if (samplePrep.inSituPreparation === true) {
-    otherConditionsScore += 10;
-  }
-  if (samplePrep.offline === true) {
-    otherConditionsScore -= 10;
-  }
-
-  //    (d) **Sample throughput** (this is where the fix goes)
+  //    (c) Sample throughput
   if (samplePrep.sampleThroughput === 'high') {
     otherConditionsScore += 5;    // High throughput → +5
   } else if (samplePrep.sampleThroughput === 'moderate') {
@@ -167,10 +169,14 @@ else if (samplePrep.solventType === 'nongreen')  extractionProcedureScore -= 10;
     otherConditionsScore -= 5;    // Low → –5
   }
 
-  // Ensure no negative intermediate scores
-  preSynthesisScore        = Math.max(0, preSynthesisScore);
-  samplingRequiredScore    = Math.max(0, samplingRequiredScore);
-  extractionProcedureScore = Math.max(0, extractionProcedureScore);
+  // Clamp each component to its own 0-100 range. Without this, stacked bonus
+  // modifiers (e.g. default high yield + in-situ + high throughput) can push
+  // a component's true value well above 100, and that excess silently
+  // absorbs real decreases elsewhere — the displayed score stays capped at
+  // 100 even after a genuine negative change, making it look unresponsive.
+  preSynthesisScore        = Math.min(100, Math.max(0, preSynthesisScore));
+  samplingRequiredScore    = Math.min(100, Math.max(0, samplingRequiredScore));
+  extractionProcedureScore = Math.min(100, Math.max(0, extractionProcedureScore));
 
   // Final formula:
   //   (Pre-synthesis + Sampling procedure + Extraction) / 3  +  otherConditionsScore
