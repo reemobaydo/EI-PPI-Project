@@ -227,7 +227,7 @@ export function renderApp(container) {
       energy: 'non',
       vaporEmission: false,
       nonAutomated: 'automated',
-      notMultianalyte: false,
+      multianalyte: false,
       miniaturized: false
     },
     reagents: [

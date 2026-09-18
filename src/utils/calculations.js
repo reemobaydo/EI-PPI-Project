@@ -112,6 +112,11 @@ samplePrep.solventType = norm(samplePrep.solventType);
   } else {
     extractionProcedureScore = 70;
 
+    // Type of matrix
+    if      (samplePrep.matrixType === 'simple')  extractionProcedureScore += 10;
+    else if (samplePrep.matrixType === 'pharma')  extractionProcedureScore -= 5;
+    else if (samplePrep.matrixType === 'complex') extractionProcedureScore -= 10;
+
     // Solvent type
 // normalise once near the top of calculateSamplePrepScore
 samplePrep.solventType = norm(samplePrep.solventType);
