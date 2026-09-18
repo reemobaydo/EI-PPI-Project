@@ -240,18 +240,14 @@ return score;
 
 // Function to calculate Reagent Score
 export function calculateReagentScore(reagents) {
-  // Skip reagents that were just added and haven't been configured yet,
-  // so the average doesn't shift until the user actually sets real values.
-  const configuredReagents = reagents.filter(reagent => reagent.configured !== false);
-
-  if (configuredReagents.length === 0) {
-    return 100; // If no configured reagents, assume perfect score (water only)
+  if (reagents.length === 0) {
+    return 100; // If no reagents at all, assume perfect score (water only)
   }
 
   let totalScore = 0;
 
   // Calculate score for each reagent
-  configuredReagents.forEach(reagent => {
+  reagents.forEach(reagent => {
     let reagentScore = 0;
     
     // If it's water with zero pictograms
@@ -304,7 +300,7 @@ export function calculateReagentScore(reagents) {
   });
   
   // Average the scores
-  return totalScore / configuredReagents.length;
+  return totalScore / reagents.length;
 }
 
 // Function to calculate Waste Score

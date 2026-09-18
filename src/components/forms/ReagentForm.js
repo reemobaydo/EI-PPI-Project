@@ -15,17 +15,6 @@ function makeCollapsible(headerEl, contentEl) {
   });
 }
 
-// Fields that actually feed into the reagent's score. A reagent only counts
-// toward the Reagent Score average once every one of these has been set by the user.
-const REAGENT_REQUIRED_FIELDS = ['solventType', 'signalWord', 'ghsClass', 'volume'];
-
-function withTouchedStatus(reagent, updatedReagent, touchedFieldNames) {
-  const touched = { ...(reagent._touched || {}) };
-  touchedFieldNames.forEach((field) => { touched[field] = true; });
-  updatedReagent._touched = touched;
-  updatedReagent.configured = REAGENT_REQUIRED_FIELDS.every((field) => touched[field]);
-  return updatedReagent;
-}
 export function ReagentForm(reagents, onChange, scores) {
   const form = document.createElement('div');
   form.className = 'form-section card reagent-card';
@@ -110,8 +99,7 @@ export function ReagentForm(reagents, onChange, scores) {
       solventType: 'organic',
       signalWord: 'notAvailable',
       ghsClass: 'zero',
-      volume: 'less1',
-      configured: false // excluded from the Reagent Score average until the user sets real values
+      volume: 'less1'
     };
     
     onChange([...reagents, newReagent]);
@@ -137,14 +125,13 @@ export function ReagentForm(reagents, onChange, scores) {
   form.appendChild(helpText);
 
   // ─── Compute Average Reagent Score ───
-  // Newly added solvents (configured === false) are excluded until the user
-  // sets real values, so the score doesn't jump the moment "Add Another Solvent" is clicked.
-  const configuredReagents = reagents.filter((r) => r.configured !== false);
-  const individualScores = configuredReagents.map((r) => calculateReagentScore(r));
+  // Every reagent counts toward the average based on its current on-screen
+  // values, so the displayed score always matches a manual calculation.
+  const individualScores = reagents.map((r) => calculateReagentScore(r));
   const averageReagentScore =
     individualScores.length > 0
       ? individualScores.reduce((sum, x) => sum + x, 0) / individualScores.length
-      : 100; // If no configured reagents, default to 100
+      : 100; // If no reagents at all, default to 100
 
   // ─── Pinned Horizontal Progress Bar ───
   const progressBarElement = createHorizontalProgressBar(
@@ -465,12 +452,10 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
       ...reagent,
       solventType: newSolventType
     };
-    const touchedFields = ['solventType'];
 
     if (newSolventType === 'water') {
       updatedReagent.signalWord = 'notAvailable';
       updatedReagent.ghsClass = 'zero';
-      touchedFields.push('signalWord', 'ghsClass');
       delete updatedReagent.solventName;
 
       // When water is selected, hide the solvent name field
@@ -486,7 +471,7 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
       }
     }
 
-    onUpdate(withTouchedStatus(reagent, updatedReagent, touchedFields));
+    onUpdate(updatedReagent);
   });
   
   solventTypeGroup.appendChild(solventTypeSelect);
@@ -567,17 +552,14 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
       ...reagent,
       signalWord: newSignalWord
     };
-    const touchedFields = ['signalWord'];
-
     // If signal word is set to "Not available", suggest setting GHS to "Zero pictograms"
     if (newSignalWord === 'notAvailable' && reagent.ghsClass !== 'zero') {
       if (confirm(translate('Signal Word is set to "Not available". Would you like to set GHS Classification to "Zero pictograms"?'))) {
         updatedReagent.ghsClass = 'zero';
-        touchedFields.push('ghsClass');
       }
     }
 
-    onUpdate(withTouchedStatus(reagent, updatedReagent, touchedFields));
+    onUpdate(updatedReagent);
   });
   
   signalWordGroup.appendChild(signalWordSelect);
@@ -629,17 +611,14 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
       ...reagent,
       ghsClass: newGhsClass
     };
-    const touchedFields = ['ghsClass'];
-
     // If GHS is set to "Zero pictograms", suggest setting Signal Word to "Not available"
     if (newGhsClass === 'zero' && reagent.signalWord !== 'notAvailable') {
       if (confirm(translate('GHS Classification is set to "Zero pictograms". Would you like to set Signal Word to "Not available"?'))) {
         updatedReagent.signalWord = 'notAvailable';
-        touchedFields.push('signalWord');
       }
     }
 
-    onUpdate(withTouchedStatus(reagent, updatedReagent, touchedFields));
+    onUpdate(updatedReagent);
   });
   
   ghsClassGroup.appendChild(ghsClassSelect);
@@ -678,7 +657,7 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   
   volumeSelect.addEventListener('change', (e) => {
     const updatedReagent = { ...reagent, volume: e.target.value };
-    onUpdate(withTouchedStatus(reagent, updatedReagent, ['volume']));
+    onUpdate(updatedReagent);
   });
   
   volumeGroup.appendChild(volumeSelect);

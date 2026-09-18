@@ -236,8 +236,7 @@ export function renderApp(container) {
         solventType: 'organic',
         signalWord: 'notAvailable',
         ghsClass: 'zero',
-        volume: 'less1',
-        configured: false // excluded from the Reagent Score average until the user sets real values
+        volume: 'less1'
       }
     ], // Starts with one reagent card ready to fill in; "Add Another Solvent" appends more of {solventType, signalWord, ghsClass, volume}
     waste: {
