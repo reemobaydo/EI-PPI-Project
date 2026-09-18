@@ -213,6 +213,7 @@ export function renderApp(container) {
       sampleThroughput: 'moderate', // neutral (0) by default, so the score never starts with a hidden +5 the user never chose
       // 1.5 Extraction procedure
       extractionNeeded: 'no',
+      matrixType: 'simple', // must match SamplePreparationForm.js's own `state.matrixType || 'simple'` display fallback, or the radio shows "Simple" checked while the score silently omits its +10
       solventType: 'complete',
       solventVolume: 'less0.1',
       adsorbentNature: 'renewable',

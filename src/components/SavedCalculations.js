@@ -63,10 +63,13 @@ export function SavedCalculations(loadCalculations, onLoad, onDelete) {
       
       const totalScore = calculation.data.scores.total;
       let scoreClass = '';
-      
-      if (totalScore <= 25) {
+
+      // Higher total score = better, matching the interpretation used in
+      // Results/PDF/Excel (getTotalInterpretation: >=75 Highly Recommended,
+      // >=50 Recommended, <50 Needs Improvement/Not Recommended).
+      if (totalScore >= 75) {
         scoreClass = 'success';
-      } else if (totalScore <= 50) {
+      } else if (totalScore >= 50) {
         scoreClass = 'warning';
       } else {
         scoreClass = 'danger';
