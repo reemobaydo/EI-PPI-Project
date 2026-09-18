@@ -238,69 +238,79 @@ if (automation === 'non') {
 return score;
 }
 
-// Function to calculate Reagent Score
-export function calculateReagentScore(reagents) {
-  if (reagents.length === 0) {
-    return 100; // If no reagents at all, assume perfect score (water only)
+// A reagent only has a meaningful score once all four fields have a real,
+// user-picked value — each select starts on an unselected placeholder rather
+// than a default, so "complete" is a plain function of the displayed values,
+// never of click history. Two calculations with the same on-screen values
+// always produce the same result.
+const REAGENT_REQUIRED_FIELDS = ['solventType', 'signalWord', 'ghsClass', 'volume'];
+
+export function isReagentComplete(reagent) {
+  return REAGENT_REQUIRED_FIELDS.every((field) => !!reagent[field]);
+}
+
+function scoreSingleReagent(reagent) {
+  // If it's water with zero pictograms
+  if (reagent.solventType === 'water' && reagent.ghsClass === 'zero') {
+    return 100;
+  }
+  // Base score on GHS classification and signal word combination
+  if (reagent.ghsClass === 'zero') {
+    return 100; // Zero pictograms
+  }
+  if (reagent.ghsClass === 'one' && reagent.signalWord === 'warning') {
+    // One pictogram + Warning
+    switch (reagent.volume) {
+      case 'less1': return 98;
+      case 'less10': return 96;
+      case 'between10And100': return 94;
+      case 'more100': return 92;
+    }
+  }
+  else if ((reagent.ghsClass === 'one' && reagent.signalWord !== 'warning') ||
+          (reagent.ghsClass === 'two' && reagent.signalWord === 'warning')) {
+    // One pictogram + Danger (or unset Signal Word, treated conservatively) OR Two pictograms + Warning
+    switch (reagent.volume) {
+      case 'less1': return 90;
+      case 'less10': return 85;
+      case 'between10And100': return 80;
+      case 'more100': return 75;
+    }
+  }
+  else if (reagent.ghsClass === 'two') {
+    // Two pictograms + Danger (or unset Signal Word, treated conservatively)
+    switch (reagent.volume) {
+      case 'less1': return 70;
+      case 'less10': return 65;
+      case 'between10And100': return 60;
+      case 'more100': return 55;
+    }
+  }
+  else if (reagent.ghsClass === 'three') {
+    // Three or more pictograms + Danger
+    switch (reagent.volume) {
+      case 'less1': return 50;
+      case 'less10': return 45;
+      case 'between10And100': return 40;
+      case 'more100': return 35;
+    }
   }
 
-  let totalScore = 0;
+  return 0;
+}
 
-  // Calculate score for each reagent
-  reagents.forEach(reagent => {
-    let reagentScore = 0;
-    
-    // If it's water with zero pictograms
-    if (reagent.solventType === 'water' && reagent.ghsClass === 'zero') {
-      reagentScore = 100;
-    }
-    // Base score on GHS classification and signal word combination
-    else if (reagent.ghsClass === 'zero') {
-      reagentScore = 100; // Zero pictograms
-    } 
-    else if (reagent.ghsClass === 'one' && reagent.signalWord === 'warning') {
-      // One pictogram + Warning
-      switch (reagent.volume) {
-        case 'less1': reagentScore = 98; break;
-        case 'less10': reagentScore = 96; break;
-        case 'between10And100': reagentScore = 94; break;
-        case 'more100': reagentScore = 92; break;
-      }
-    }
-    else if ((reagent.ghsClass === 'one' && reagent.signalWord !== 'warning') ||
-            (reagent.ghsClass === 'two' && reagent.signalWord === 'warning')) {
-      // One pictogram + Danger (or unset Signal Word, treated conservatively) OR Two pictograms + Warning
-      switch (reagent.volume) {
-        case 'less1': reagentScore = 90; break;
-        case 'less10': reagentScore = 85; break;
-        case 'between10And100': reagentScore = 80; break;
-        case 'more100': reagentScore = 75; break;
-      }
-    }
-    else if (reagent.ghsClass === 'two') {
-      // Two pictograms + Danger (or unset Signal Word, treated conservatively)
-      switch (reagent.volume) {
-        case 'less1': reagentScore = 70; break;
-        case 'less10': reagentScore = 65; break;
-        case 'between10And100': reagentScore = 60; break;
-        case 'more100': reagentScore = 55; break;
-      }
-    }
-    else if (reagent.ghsClass === 'three') {
-      // Three or more pictograms + Danger
-      switch (reagent.volume) {
-        case 'less1': reagentScore = 50; break;
-        case 'less10': reagentScore = 45; break;
-        case 'between10And100': reagentScore = 40; break;
-        case 'more100': reagentScore = 35; break;
-      }
-    }
-    
-    totalScore += reagentScore;
-  });
-  
+// Function to calculate Reagent Score
+export function calculateReagentScore(reagents) {
+  const completeReagents = reagents.filter(isReagentComplete);
+
+  if (completeReagents.length === 0) {
+    return 100; // If no complete reagents, assume perfect score (water only)
+  }
+
+  const totalScore = completeReagents.reduce((sum, reagent) => sum + scoreSingleReagent(reagent), 0);
+
   // Average the scores
-  return totalScore / reagents.length;
+  return totalScore / completeReagents.length;
 }
 
 // Function to calculate Waste Score

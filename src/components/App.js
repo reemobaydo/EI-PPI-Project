@@ -233,10 +233,12 @@ export function renderApp(container) {
     reagents: [
       {
         id: 'reagent_' + Date.now(),
-        solventType: 'organic',
-        signalWord: 'notAvailable',
-        ghsClass: 'zero',
-        volume: 'less1'
+        // No preset values — every field starts on its "-- Choose --"
+        // placeholder so the user must explicitly pick each one.
+        solventType: '',
+        signalWord: '',
+        ghsClass: '',
+        volume: ''
       }
     ], // Starts with one reagent card ready to fill in; "Add Another Solvent" appends more of {solventType, signalWord, ghsClass, volume}
     waste: {

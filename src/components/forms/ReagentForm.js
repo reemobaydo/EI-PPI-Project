@@ -5,6 +5,7 @@ import {
   createHorizontalProgressBar,
   createCoxcombChart
 } from '../../utils/charts.js';
+import { calculateReagentScore, isReagentComplete } from '../../utils/calculations.js';
 
 // Helper to collapse/expand the info block:
 function makeCollapsible(headerEl, contentEl) {
@@ -13,6 +14,19 @@ function makeCollapsible(headerEl, contentEl) {
   headerEl.addEventListener('click', () => {
     contentEl.style.display = contentEl.style.display === 'none' ? '' : 'none';
   });
+}
+
+// Selects start unselected rather than on a default value, so a field the
+// user hasn't actually chosen is always visibly a placeholder — never
+// mistakable for a real, reviewed selection.
+function addPlaceholderOption(selectEl, currentValue, placeholderText) {
+  if (currentValue) return;
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = placeholderText;
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  selectEl.appendChild(placeholder);
 }
 
 export function ReagentForm(reagents, onChange, scores) {
@@ -50,7 +64,23 @@ export function ReagentForm(reagents, onChange, scores) {
   infoCard.appendChild(infoCardContent);
   makeCollapsible(infoCardTitle, infoCardContent);
   form.appendChild(infoCard);
-  
+
+  const incompleteReagentCount = reagents.filter((r) => !isReagentComplete(r)).length;
+  if (incompleteReagentCount > 0) {
+    const incompleteNotice = document.createElement('div');
+    incompleteNotice.className = 'reagent-incomplete-notice';
+    incompleteNotice.style.cssText = `
+      background: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+      border-radius: 5px; padding: 10px 15px; margin-bottom: 15px; font-size: 0.9rem;
+    `;
+    incompleteNotice.textContent = translate(
+      incompleteReagentCount === 1
+        ? '1 solvent still needs a selection in every field and is not included in the Reagent Score yet.'
+        : `${incompleteReagentCount} solvents still need a selection in every field and are not included in the Reagent Score yet.`
+    );
+    form.appendChild(incompleteNotice);
+  }
+
   // Current reagents list
   const reagentsList = document.createElement('div');
   reagentsList.className = 'reagents-container';
@@ -96,10 +126,12 @@ export function ReagentForm(reagents, onChange, scores) {
   addSolventContainer.addEventListener('click', () => {
     const newReagent = {
       id: 'reagent_' + Date.now(), // Ensure unique ID
-      solventType: 'organic',
-      signalWord: 'notAvailable',
-      ghsClass: 'zero',
-      volume: 'less1'
+      // No preset values — every field starts on its "-- Choose --"
+      // placeholder so the user must explicitly pick each one.
+      solventType: '',
+      signalWord: '',
+      ghsClass: '',
+      volume: ''
     };
     
     onChange([...reagents, newReagent]);
@@ -125,13 +157,10 @@ export function ReagentForm(reagents, onChange, scores) {
   form.appendChild(helpText);
 
   // ─── Compute Average Reagent Score ───
-  // Every reagent counts toward the average based on its current on-screen
-  // values, so the displayed score always matches a manual calculation.
-  const individualScores = reagents.map((r) => calculateReagentScore(r));
-  const averageReagentScore =
-    individualScores.length > 0
-      ? individualScores.reduce((sum, x) => sum + x, 0) / individualScores.length
-      : 100; // If no reagents at all, default to 100
+  // Shared with the overall EI calculation (calculations.js) so there is a
+  // single source of truth: any reagent with all four fields chosen counts,
+  // based purely on its current on-screen values.
+  const averageReagentScore = calculateReagentScore(reagents);
 
   // ─── Pinned Horizontal Progress Bar ───
   const progressBarElement = createHorizontalProgressBar(
@@ -397,7 +426,17 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   const reagentTitle = document.createElement('h4');
   reagentTitle.textContent = `${translate('Add Solvent')}`;
   reagentHeader.appendChild(reagentTitle);
-  
+
+  if (!isReagentComplete(reagent)) {
+    const incompleteBadge = document.createElement('span');
+    incompleteBadge.textContent = translate('Incomplete — not counted');
+    incompleteBadge.style.cssText = `
+      background: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+      border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; margin-left: 10px;
+    `;
+    reagentHeader.appendChild(incompleteBadge);
+  }
+
   // Add remove button to the header
   const headerRemoveButton = document.createElement('button');
   headerRemoveButton.className = 'remove-btn';
@@ -435,7 +474,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     { value: 'buffer', label: translate('Buffer') },
     { value: 'other', label: translate('Other') }
   ];
-  
+
+  addPlaceholderOption(solventTypeSelect, reagent.solventType, translate('-- Choose Solvent Type --'));
   solventTypes.forEach(type => {
     const option = document.createElement('option');
     option.value = type.value;
@@ -535,7 +575,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     { value: 'danger', label: translate('Danger') },
     { value: 'notAvailable', label: translate('Not available') }
   ];
-  
+
+  addPlaceholderOption(signalWordSelect, reagent.signalWord, translate('-- Choose Signal Word --'));
   signalWords.forEach(word => {
     const option = document.createElement('option');
     option.value = word.value;
@@ -594,7 +635,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     { value: 'two', label: translate('Two pictograms') },
     { value: 'three', label: translate('Three or more pictograms') }
   ];
-  
+
+  addPlaceholderOption(ghsClassSelect, reagent.ghsClass, translate('-- Choose GHS Classification --'));
   ghsClasses.forEach(cls => {
     const option = document.createElement('option');
     option.value = cls.value;
@@ -644,7 +686,8 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
     { value: 'between10And100', label: translate('10.1-100 mL (g)') },
     { value: 'more100', label: translate('> 100 mL (g)') }
   ];
-  
+
+  addPlaceholderOption(volumeSelect, reagent.volume, translate('-- Choose Volume Used --'));
   volumes.forEach(volume => {
     const option = document.createElement('option');
     option.value = volume.value;
@@ -664,55 +707,6 @@ function createReagentItem(reagent, index, onUpdate, onRemove) {
   formLayout.appendChild(volumeGroup);
   
   reagentItem.appendChild(formLayout);
-  
-  return reagentItem;
-}
 
-function calculateReagentScore(reagent) {
-  // If it's water, score is 100
-  if (reagent.solventType === 'water' && reagent.ghsClass === 'zero') {
-    return 100;
-  }
-  
-  // Base score on GHS classification and signal word combination
-  let baseScore = 0;
-  
-  if (reagent.ghsClass === 'zero') {
-    baseScore = 100; // Zero pictograms
-  } else if (reagent.ghsClass === 'one' && reagent.signalWord === 'warning') {
-    // One pictogram + Warning
-    switch (reagent.volume) {
-      case 'less1': return 98;
-      case 'less10': return 96;
-      case 'between10And100': return 94;
-      case 'more100': return 92;
-    }
-  } else if ((reagent.ghsClass === 'one' && reagent.signalWord !== 'warning') ||
-            (reagent.ghsClass === 'two' && reagent.signalWord === 'warning')) {
-    // One pictogram + Danger (or unset Signal Word, treated conservatively) OR Two pictograms + Warning
-    switch (reagent.volume) {
-      case 'less1': return 90;
-      case 'less10': return 85;
-      case 'between10And100': return 80;
-      case 'more100': return 75;
-    }
-  } else if (reagent.ghsClass === 'two') {
-    // Two pictograms + Danger (or unset Signal Word, treated conservatively)
-    switch (reagent.volume) {
-      case 'less1': return 70;
-      case 'less10': return 65;
-      case 'between10And100': return 60;
-      case 'more100': return 55;
-    }
-  } else if (reagent.ghsClass === 'three') {
-    // Three or more pictograms + Danger
-    switch (reagent.volume) {
-      case 'less1': return 50;
-      case 'less10': return 45;
-      case 'between10And100': return 40;
-      case 'more100': return 35;
-    }
-  }
-  
-  return baseScore;
+  return reagentItem;
 }
